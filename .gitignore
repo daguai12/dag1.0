@@ -1,0 +1,37 @@
+# 编译构建目录（CMake构建产物）
+/build/
+/lib/  # 假设lib目录存放编译生成的库文件
+
+# 临时文件和日志
+*.log
+*.swp
+*.swo
+.DS_Store  # macOS系统文件
+Thumbs.db  # Windows系统文件
+
+# IDE配置文件（根据你使用的工具添加）
+.idea/    # IntelliJ IDEA
+.vscode/  # VS Code
+cmake-build-*/  # CLion的CMake构建目录
+
+# 可执行文件和目标文件
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+example/*  # 假设example目录存放编译生成的示例程序（若需保留源码则细化）
+test/*    # 假设test目录存放测试程序二进制文件（若需保留测试源码则细化）
+
+# CMake临时文件
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+
+# 自定义构建输出（如有其他编译目录可补充）
+/out/
+/bin/
+
+.cache/

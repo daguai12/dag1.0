@@ -1,0 +1,12 @@
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/fiber_lib)
+
+ADD_EXECUTABLE(scheduler Scheduler.cpp)
+
+TARGET_LINK_LIBRARIES(scheduler fiber_shared)
+
+
+SET_TARGET_PROPERTIES(scheduler PROPERTIES
+    RUNTINE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/
+)
+
+
