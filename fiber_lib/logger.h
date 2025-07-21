@@ -14,9 +14,9 @@
 #include "./utils/util.h"
 
 // region # 宏定义获取日志器
-#define DAG_LOG_ROOT() LoggerMgr::GetInstance()->getRootLogger()
+#define DAG_LOG_ROOT() dag::LoggerMgr::GetInstance()->getRootLogger()
 
-#define DAG_LOG_NAME(name) LoggerMgr::GetInstance()->getLogger(name)
+#define DAG_LOG_NAME(name) dag::LoggerMgr::GetInstance()->getLogger(name)
 // endregion
 
 // region # 宏定义流式输出
@@ -32,13 +32,13 @@
                              )                                                                              \
                                 )).getLogEvent()->getMessageStream()                                        \
 
-#define DAG_LOG_DEBUG(logger) DAG_LOG(logger, LogLevel::DEBUG)
+#define DAG_LOG_DEBUG(logger) DAG_LOG(logger, dag::LogLevel::DEBUG)
 
-#define DAG_LOG_INFO(logger) DAG_LOG(logger, LogLevel::INFO)
+#define DAG_LOG_INFO(logger) DAG_LOG(logger, dag::LogLevel::INFO)
 
-#define DAG_LOG_ERROR(logger) DAG_LOG(logger, LogLevel::ERROR)
+#define DAG_LOG_ERROR(logger) DAG_LOG(logger, dag::LogLevel::ERROR)
 
-#define DAG_LOG_FATAL(logger) DAG_LOG(logger, LogLevel::FATAL)
+#define DAG_LOG_FATAL(logger) DAG_LOG(logger, dag::LogLevel::FATAL)
 // endregion
 
 // region # 宏定义 fmt 输出
@@ -54,13 +54,13 @@
                              )                                                                      \
                                 )).getLogEvent()->Print(fmt, __VA_ARGS__);                          \
 
-#define DAG_LOG_FMT_DEBUG(logger, fmt, ...) DAG_LOG_FMT(logger, LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define DAG_LOG_FMT_DEBUG(logger, fmt, ...) DAG_LOG_FMT(logger, dag::LogLevel::DEBUG, fmt, __VA_ARGS__)
 
-#define DAG_LOG_FMT_INFO(logger, fmt, ...) DAG_LOG_FMT(logger, LogLevel::INFO, fmt, __VA_ARGS__)
+#define DAG_LOG_FMT_INFO(logger, fmt, ...) DAG_LOG_FMT(logger, dag::LogLevel::INFO, fmt, __VA_ARGS__)
 
-#define DAG_LOG_FMT_ERROR(logger, fmt, ...) DAG_LOG_FMT(logger, LogLevel::ERROR, fmt, __VA_ARGS__)
+#define DAG_LOG_FMT_ERROR(logger, fmt, ...) DAG_LOG_FMT(logger, dag::LogLevel::ERROR, fmt, __VA_ARGS__)
 
-#define DAG_LOG_FMT_FATAL(logger, fmt, ...) DAG_LOG_FMT(logger, LogLevel::FATAL, fmt, __VA_ARGS__)
+#define DAG_LOG_FMT_FATAL(logger, fmt, ...) DAG_LOG_FMT(logger, dag::LogLevel::FATAL, fmt, __VA_ARGS__)
 // endregion
 
 namespace dag {
@@ -446,7 +446,6 @@ namespace dag {
         std::unordered_map<std::string, Logger::ptr> loggers_;
     };
 
-    using LoggerMgr = Singleton<LoggerManager>;
 
 
     /**
@@ -482,6 +481,7 @@ namespace dag {
         /// 日志事件
         LogEvent::ptr event_;
     };
+    using LoggerMgr = Singleton<LoggerManager>;
 
 }
 

@@ -4,9 +4,10 @@
 #include "./utils/util.h"
 #include "logger.h"
 
+
 namespace dag{
 
-template class Singleton<LoggerManager>;
+// template class Singleton<LoggerManager>;
 
 // template <typename T>
 // T* Singleton<T>::instance = nullptr;
