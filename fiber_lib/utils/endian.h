@@ -10,6 +10,7 @@ extern "C++"{
 #include <byteswap.h>
 #include <type_traits>
 #include <stdint.h>
+#include <endian.h>
 
 namespace dag {
 
@@ -40,13 +41,13 @@ byteswap(T value) {
     return (T)bswap_16((uint16_t)value);
 }
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if __BYTE_ORDER__ == BIG_ENDIAN
 #define DAG_BYTE_ORDER DAG_BIG_ENDIAN
 #else
 #define DAG_BYTE_ORDER DAG_LITTLE_ENDIAN
 #endif
 
-#if DAG_BYTE_ORDER != DAG_BIG_ENDIAN
+#if DAG_BYTE_ORDER == DAG_BIG_ENDIAN
 
 /**
  * @brief 只在小端机器上执行byteswap, 在大端机器上什么都不做
