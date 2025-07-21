@@ -13,13 +13,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 ADD_LIBRARY(fiber_shared SHARED
             fiber.cpp scheduler.cpp thread.cpp timer.cpp
             ioscheduler.cpp fd_manager.cpp hook.cpp logger.cpp 
-            socket.cpp address.cpp
+            socket.cpp address.cpp bytearray.cpp
             utils/util.cpp )
 
 ADD_LIBRARY(fiber_static STATIC
             fiber.cpp scheduler.cpp thread.cpp timer.cpp
             ioscheduler.cpp fd_manager.cpp hook.cpp logger.cpp
-            socket.cpp address.cpp
+            socket.cpp address.cpp bytearray.cpp
             utils/util.cpp)
 
 TARGET_LINK_LIBRARIES(fiber_shared PRIVATE OpenSSL::SSL OpenSSL::Crypto)

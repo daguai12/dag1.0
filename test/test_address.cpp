@@ -5,7 +5,7 @@
 
 using namespace dag ;
     
-dag::Logger::ptr g_logger = dag::DAG_LOG_ROOT();
+dag::Logger::ptr g_logger = DAG_LOG_ROOT();
 
 void test() {
     std::vector<dag::Address::ptr> addrs;

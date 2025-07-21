@@ -10,12 +10,16 @@ using namespace dag;
 static dag::Logger::ptr g_logger = DAG_LOG_ROOT();
 
 bool test_socket() {
-    struct sockaddr_in sock1;
-    sock1.sin_family = AF_INET;
-    sock1.sin_port = htons(80);
-    inet_pton(AF_INET, "39.156.70.239",&sock1.sin_addr.s_addr);
+    // struct sockaddr_in sock1;
+    // sock1.sin_family = AF_INET;
+    // sock1.sin_port = htons(80);
+    // inet_pton(AF_INET, "39.156.70.239",&sock1.sin_addr.s_addr);
+    //
+    // IPAddress::ptr addr(new IPv4Address(sock1));
 
-    IPAddress::ptr addr(new IPv4Address(sock1));
+
+
+    dag::IPAddress::ptr addr = dag::Address::LookupAnyIPAddress("www.baidu.com");
 
     if(addr) {
         DAG_LOG_INFO(g_logger) << "get address: " << addr->toString();
@@ -26,8 +30,8 @@ bool test_socket() {
         return false;
     }
 
-    addr->setPort(80);
     dag::Socket::ptr sock = dag::Socket::CreateTCP(addr);
+    addr->setPort(80);
 
     if(!sock->connect(addr)) {
         DAG_LOG_ERROR(g_logger) << "connect" << addr->toString() << " fail";
@@ -47,10 +51,6 @@ bool test_socket() {
     rt = sock->recv(&buffs[0], buffs.size());
 
     std::cout << buffs << std::endl;
-
-    while(1) {
-        sleep(1);
-    }
 
     if(rt <= 0) {
         DAG_LOG_INFO(g_logger) << "send fail rt=" << rt;
