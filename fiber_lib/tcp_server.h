@@ -1,93 +1,78 @@
 #ifndef _DAG_TCP_SERVER_H_
 #define _DAG_TCP_SERVER_H_
 
-#include <cstdint>
-#include <memory.h>
-#include <memory>
-#include <netinet/tcp.h>
-#include <sys/types.h>
-#include <type_traits>
-#include "address.h"
 #include "ioscheduler.h"
+#include "utils/noncopyable.h"
+#include "address.h"
 #include "socket.h"
-#include "./utils/noncopyable.h"
+#include <memory>
 
-namespace dag {
 
-class TCPServer : public std::enable_shared_from_this<TCPServer>, NonCopyable {
+namespace  dag {
+
+/**
+* @brief TCP服务器封装
+*/
+class TcpServer : public std::enable_shared_from_this<TcpServer>, NonCopyable {
 public:
-    using ptr = std::shared_ptr<TCPServer>;
+    using ptr = std::shared_ptr<TcpServer>;
 
-    /**
-    * @brief 构造函数
-    * @param name TCP服务器名称
-    * @param acceptor acceptor 反应堆
-    * @param worker worker 反应堆
-    */
-    explicit TCPServer(std::string name, IOManager *acceptor = IOManager::GetThis(), IOManager* worker = IOManager::GetThis());
+    TcpServer(dag::IOManager* worker = dag::IOManager::GetThis()
+              ,dag::IOManager* io_worker = dag::IOManager::GetThis()
+              ,dag::IOManager* accept_worker = dag::IOManager::GetThis());
 
-    /**
-    * @brief 虚析构函数
-    */
-    virtual ~TCPServer();
+    
+    virtual ~TcpServer();
 
-    /**kk
-    * @brief 绑定服务器地址
-    * @param address 服务器地址
-    * @return 操作是否成功
-    */
-    bool bind(const Address::ptr& address);
+    virtual bool bind(dag::Address::ptr addr);
 
-    /**
-    * @brief 启动服务器
-    */
-    void start();
+    virtual bool bind(const std::vector<Address::ptr>& addrs
+                        , std::vector<Address::ptr>& fails);
 
-    /**
-    * @brief 关闭服务器
-    */
-    void stop();
+    virtual bool start();
 
-    static uint64_t getRecvTimeout() {return s_recv_timeout;}
+    virtual void stop();
 
-    static uint64_t getSendTimeout() {return s_send_timeout;}
+    void setRecvTimellout(uint64_t v) { m_recvTimeout = v; }
 
-    const std::string &getName() const { return name_; }
+    uint64_t getRecvTimeout() const { return m_recvTimeout; }
 
-    bool isStop() const { return stop_; }
+    void setName(const std::string& v) { m_name = v;}
+
+    std::string getName() const { return m_name;}
+
+    bool isStop() const { return m_isStop;};
+
+    virtual std::string toString(const std::string& prefix = "");
+
+    std::vector<Socket::ptr> getSocks() const { return m_socks;}
 
 protected:
-    /**
-    * @brief 处理新的客户端连接
-    */
-    virtual void handleAccept();
+    virtual void handleClient(Socket::ptr client);
 
-    /**
-    * @brief 
-    * @param client 需要处理的客户端链接
-    */
-    virtual void handleClient(const Socket::ptr& client);
+    virtual void startAccept(Socket::ptr sock);
 
-private:
-    // 接受超时时间
-    static const uint64_t s_recv_timeout = 1000 * 2 * 60;
+protected:
+    // 监听Socket数组
+    std::vector<Socket::ptr> m_socks;
+    // 新链接的Socket工作调度器
+    IOManager* m_worker;
+    IOManager* m_ioWorker;
+    // 服务器Socket接受连接的调度器
+    IOManager* m_acceptWorker;
+    // 接收超时时间（毫秒)
+    uint64_t m_recvTimeout;
+    // 服务器名称
+    std::string m_name;
+    // 服务器类型
+    std::string m_type = "tcp";
+    // 服务是否停止
+    bool m_isStop;
 
-    // 接受超时时间
-    static const uint64_t s_send_timeout = 1000 * 1 * 60;
-
-private:
-    //TCP 服务器名字
-    std::string name_;
-    //acceptor 负责处理新的客户端链接
-    IOManager *acceptor_;
-    // worker, 负责处理客户端链接
-    IOManager *worker_;
-    // 监听socket
-    Socket::ptr sock_;
-    // 服务器是否停止
-    bool stop_;
 };
-    
+
+
 }
+
 
 #endif
