@@ -7,6 +7,7 @@
 #include <cerrno>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <ostream>
 #include <string>
 #include <sys/socket.h>
 #include <string.h>
@@ -76,7 +77,7 @@ int64_t Socket::getRecvTimeout() {
     return -1;
 }
 
-void Socket::SetRecvTimeout(int64_t v){
+void Socket::setRecvTimeout(int64_t v){
     struct timeval tv{int(v/1000), int (v % 1000 * 1000)};
     setOption(SOL_SOCKET, SO_RCVTIMEO, tv);
 }
@@ -377,6 +378,12 @@ std::ostream& Socket::dump(std::ostream& os) const{
     return os;
 }
 
+std::string Socket::toString() const {
+    std::stringstream ss;
+    dump(ss);
+    return ss.str();
+}
+
 bool Socket::cancelRead(){
     return IOManager::GetThis()->cancelEvent(m_sock, IOManager::Event::READ);
 }
@@ -411,6 +418,10 @@ void Socket::newSock(){
             << ", " << m_type << ", " << m_protocol << ") errno="
             << errno << " errstr-" << strerror(errno);
     }
+}
+
+std::ostream& operator<<(std::ostream& os, const Socket& sock) {
+    return sock.dump(os);
 }
 
 }

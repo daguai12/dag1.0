@@ -44,7 +44,7 @@ public:
 
 
     int64_t getRecvTimeout();
-    void SetRecvTimeout(int64_t v);
+    void setRecvTimeout(int64_t v);
 
     bool getOption(int level, int option, void* result, socklen_t* len);
 
@@ -88,7 +88,10 @@ public:
     bool isValid() const;
     int getError();
 
-    std::ostream& dump(std::ostream& os) const;
+    virtual std::ostream& dump(std::ostream& os) const;
+
+    virtual std::string toString() const;
+
     int getSocket() const {return m_sock;};
 
     bool cancelRead();
@@ -108,8 +111,9 @@ protected:
 
     Address::ptr m_localAddress;
     Address::ptr m_remoteAddress;
-
 };
+
+std::ostream& operator<<(std::ostream& os, const Socket& sock);
 
 }
 
