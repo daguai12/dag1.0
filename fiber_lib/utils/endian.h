@@ -76,8 +76,7 @@ T byteswapOnLittleEndian(T t) {
 
 /**
  * @brief 只在大端机器上执行byteswap, 在小端机器上什么都不做
- */
-template<class T>
+ */ template<class T>
 T byteswapOnBigEndian(T t) {
     return t;
 }

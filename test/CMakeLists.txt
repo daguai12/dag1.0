@@ -112,3 +112,27 @@ IF(BUILD_TESTING)
     #注册测试
     # ADD_TEST(NAME HookUnitTest COMMAND test_bytearray)
 ENDIF()
+
+IF(BUILD_TESTING)
+    SET(CMAKE_BUILD_TYPE Debug)
+
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+    ADD_EXECUTABLE(test_tcp_server test_tcp_server.cpp)
+
+
+    TARGET_INCLUDE_DIRECTORIES(test_tcp_server PRIVATE
+        ${PROJECT_SOURCE_DIR}/fiber_lib
+        ${PROJECT_SOURCE_DIR}/fiber_lib/util
+    )
+
+    SET_TARGET_PROPERTIES(test_tcp_server PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    #链接到测试的库
+    TARGET_LINK_LIBRARIES(test_tcp_server PRIVATE fiber_shared)
+
+    #注册测试
+    # ADD_TEST(NAME HookUnitTest COMMAND test_tcp_server)
+ENDIF()
