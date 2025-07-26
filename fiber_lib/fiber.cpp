@@ -1,13 +1,12 @@
-
+#include "logger.h"
 #include "fiber.h"
 #include <atomic>
 #include <iostream>
 
 #include <assert.h>
 
-static bool debug = false;
-
 namespace dag{
+static Logger::ptr g_logger = DAG_LOG_ROOT();
 
 // 正在运行的协程
 static thread_local Fiber* t_fiber = nullptr;
@@ -83,9 +82,7 @@ Fiber::Fiber() {
 
     ++s_fiber_count;
     m_id = s_fiber_id++;  //协程id从0开始，用完加1
-
-    // SYLAR_LOG_DEBUG(g_logger) << "Fibber::Fibber() main id = " << m_id;
-    if(debug) std::cout << "Fiber::Fiber(): main id = " << m_id << std::endl;
+    DAG_LOG_DEBUG(g_logger) << "Fiber::Fiber main";
 }
 
 
@@ -117,7 +114,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize,bool run_in_scheduler)
 
     m_id = s_fiber_id++;
     ++s_fiber_count;
-    if(debug) std::cout << "Fiber(): child id = " << m_id << std::endl;
+    DAG_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
 }
 
 /**
@@ -130,7 +127,8 @@ Fiber::~Fiber()
     {
         free(m_stack);
     }
-    if(debug) std::cout << "~Fiber: id= " << m_id << std::endl;
+    DAG_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id
+                            << " total=" << s_fiber_count;
 }
 
 /**
