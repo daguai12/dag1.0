@@ -6,7 +6,7 @@
 #include "hook.h"
 #include "./utils/util.h"
 
-static bool debug = false;
+static bool debug = true;
 
 namespace dag{
 

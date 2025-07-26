@@ -68,7 +68,6 @@ protected:
     std::string m_type = "tcp";
     // 服务是否停止
     bool m_isStop;
-
 };
 
 

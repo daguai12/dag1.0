@@ -14,13 +14,18 @@ ADD_LIBRARY(fiber_shared SHARED
             fiber.cpp scheduler.cpp thread.cpp timer.cpp
             ioscheduler.cpp fd_manager.cpp hook.cpp logger.cpp 
             socket.cpp address.cpp bytearray.cpp tcp_server.cpp
-            utils/util.cpp )
+            stream.cpp  
+            utils/util.cpp 
+            stream/socket_stream.cpp)
 
 ADD_LIBRARY(fiber_static STATIC
             fiber.cpp scheduler.cpp thread.cpp timer.cpp
             ioscheduler.cpp fd_manager.cpp hook.cpp logger.cpp
             socket.cpp address.cpp bytearray.cpp tcp_server.cpp
-            utils/util.cpp)
+            stream.cpp
+            utils/util.cpp
+            stream/socket_stream.cpp)
+
 
 TARGET_LINK_LIBRARIES(fiber_shared PRIVATE OpenSSL::SSL OpenSSL::Crypto)
 

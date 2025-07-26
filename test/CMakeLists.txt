@@ -124,6 +124,7 @@ IF(BUILD_TESTING)
     TARGET_INCLUDE_DIRECTORIES(test_tcp_server PRIVATE
         ${PROJECT_SOURCE_DIR}/fiber_lib
         ${PROJECT_SOURCE_DIR}/fiber_lib/util
+        ${PROJECT_SOURCE_DIR}/fiber_lib/stream
     )
 
     SET_TARGET_PROPERTIES(test_tcp_server PROPERTIES
@@ -135,4 +136,54 @@ IF(BUILD_TESTING)
 
     #注册测试
     # ADD_TEST(NAME HookUnitTest COMMAND test_tcp_server)
+ENDIF()
+
+IF(BUILD_TESTING)
+    SET(CMAKE_BUILD_TYPE Debug)
+
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+    ADD_EXECUTABLE(test_socket_stream test_socket_stream.cpp)
+
+
+    TARGET_INCLUDE_DIRECTORIES(test_socket_stream PRIVATE
+        ${PROJECT_SOURCE_DIR}/fiber_lib
+        ${PROJECT_SOURCE_DIR}/fiber_lib/util
+        ${PROJECT_SOURCE_DIR}/fiber_lib/stream
+    )
+
+    SET_TARGET_PROPERTIES(test_socket_stream PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    #链接到测试的库
+    TARGET_LINK_LIBRARIES(test_socket_stream PRIVATE fiber_shared)
+
+    #注册测试
+    # ADD_TEST(NAME HookUnitTest COMMAND test_socket_stream)
+ENDIF()
+
+IF(BUILD_TESTING)
+    SET(CMAKE_BUILD_TYPE Debug)
+
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+    ADD_EXECUTABLE(test_socket_stream_client test_socket_stream_client.cpp)
+
+
+    TARGET_INCLUDE_DIRECTORIES(test_socket_stream_client PRIVATE
+        ${PROJECT_SOURCE_DIR}/fiber_lib
+        ${PROJECT_SOURCE_DIR}/fiber_lib/util
+        ${PROJECT_SOURCE_DIR}/fiber_lib/stream
+    )
+
+    SET_TARGET_PROPERTIES(test_socket_stream_client PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+
+    #链接到测试的库
+    TARGET_LINK_LIBRARIES(test_socket_stream_client PRIVATE fiber_shared)
+
+    #注册测试
+    # ADD_TEST(NAME HookUnitTest COMMAND test_socket_stream_client)
 ENDIF()
