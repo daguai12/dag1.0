@@ -1,4 +1,4 @@
-#include "logger.h"
+ #include "logger.h"
 #include "fiber.h"
 #include <atomic>
 #include <iostream>
@@ -245,5 +245,3 @@ void Fiber::SetSchedulerFiber(Fiber* f)
 }
 
 };
-
-
