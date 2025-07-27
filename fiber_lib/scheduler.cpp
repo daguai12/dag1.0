@@ -3,12 +3,13 @@
 
 
 #include "scheduler.h"
+#include "logger.h"
 #include "hook.h"
 #include "./utils/util.h"
 
-static bool debug = true;
-
 namespace dag{
+
+static Logger::ptr g_logger = DAG_LOG_ROOT();
 
 static thread_local Scheduler* t_scheduler = nullptr;
 
@@ -22,8 +23,9 @@ void Scheduler::SetThis()
 	t_scheduler = this;
 }
 
-Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name):
-m_useCaller(use_caller), m_name(name)
+Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name)
+    : m_useCaller(use_caller)
+    , m_name(name)
 {
 	assert(threads>0 && Scheduler::GetThis()==nullptr);
 
@@ -49,7 +51,6 @@ m_useCaller(use_caller), m_name(name)
 	}
 
 	m_threadCount = threads;
-	if(debug) std::cout << "Scheduler::Scheduler() success\n";
 }
 
 Scheduler::~Scheduler()
@@ -59,7 +60,6 @@ Scheduler::~Scheduler()
 	{
         t_scheduler = nullptr;
     }
-    if(debug) std::cout << "Scheduler::~Scheduler() success\n";
 }
 
 void Scheduler::start()
@@ -78,13 +78,12 @@ void Scheduler::start()
 		m_threads[i].reset(new Thread(std::bind(&Scheduler::run, this), m_name + "_" + std::to_string(i)));
 		m_threadIds.push_back(m_threads[i]->getId());
 	}
-	if(debug) std::cout << "Scheduler::start() success\n";
 }
 
 void Scheduler::run()
 {
+    DAG_LOG_DEBUG(g_logger) << m_name << " run";
 	int thread_id = getThreadId();
-	if(debug) std::cout << "Schedule::run() starts in thread: " << thread_id << std::endl;
 	
 	set_hook_enable(true);
 
@@ -161,7 +160,6 @@ void Scheduler::run()
 			// 系统关闭 -> idle协程将从死循环跳出并结束 -> 此时的idle协程状态为TERM -> 再次进入将跳出循环并退出run()
             if (idle_fiber->getState() == Fiber::TERM) 
             {
-            	if(debug) std::cout << "Schedule::run() ends in thread: " << thread_id << std::endl;
                 break;
             }
 			m_idleThreadCount++;
@@ -173,8 +171,6 @@ void Scheduler::run()
 
 void Scheduler::stop()
 {
-	if(debug) std::cout << "Schedule::stop() starts in thread: " << getThreadId() << std::endl;
-	
 	if(stopping())
 	{
 		return;
@@ -204,7 +200,6 @@ void Scheduler::stop()
 	if(m_schedulerFiber)
 	{
 		m_schedulerFiber->resume();
-		if(debug) std::cout << "m_schedulerFiber ends in thread:" << getThreadId() << std::endl;
 	}
 
 	std::vector<std::shared_ptr<Thread>> thrs;
@@ -217,7 +212,7 @@ void Scheduler::stop()
 	{
 		i->join();
 	}
-	if(debug) std::cout << "Schedule::stop() ends in thread:" << getThreadId() << std::endl;
+    DAG_LOG_DEBUG(g_logger) << this << " stopped";
 }
 
 void Scheduler::tickle()
@@ -227,10 +222,9 @@ void Scheduler::tickle()
 
 void Scheduler::idle()
 {
+    DAG_LOG_INFO(g_logger) << "idle";
 	while(!stopping())
 	{
-		if(debug) std::cout << "Scheduler::idle(), sleeping in thread: " << getThreadId() << std::endl;	
-		sleep(1);
 		Fiber::GetThis()->yield();
 	}
 }
