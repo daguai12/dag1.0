@@ -165,7 +165,7 @@ bool IOManager::delEvent(int fd, Event event)
     }
 
     std::lock_guard<std::mutex> lock(fd_ctx->mutex);
-    if (fd_ctx->events & event)
+    if (!(fd_ctx->events & event))
     {
         return false;
     }
