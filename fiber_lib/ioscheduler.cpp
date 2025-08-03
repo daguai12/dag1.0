@@ -9,12 +9,16 @@
 #include "ioscheduler.h"
 #include "scheduler.h"
 #include "./utils/util.h"
+#include "logger.h"
+#include "./utils/asserts.h"
 
 
-int debug = 0;
+// int debug = 0;
 
 namespace dag
 {
+
+static dag::Logger::ptr g_logger = DAG_LOG_ROOT();
 
 IOManager* IOManager::GetThis()
 {
@@ -30,6 +34,8 @@ IOManager::FdContext::EventContext& IOManager::FdContext::getEventContext(Event 
         return read;
     case WRITE:
         return write;
+    default:
+        DAG_ASSERT(false);
     }
     throw std::invalid_argument("Unsupported event type");
 }
@@ -112,9 +118,16 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb)
     std::lock_guard<std::mutex> lock(fd_ctx->mutex);
 
     // the event has already been added
-    if (fd_ctx->events & event)
-    {
-        return -1;
+    // if (fd_ctx->events & event)
+    // {
+    //     return -1;
+    // }
+    
+     if(fd_ctx->events & event) {
+        DAG_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
+                    << " event=" << (EPOLL_EVENTS)event
+                    << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
+        DAG_ASSERT(!(fd_ctx->events & event));
     }
 
     int op = fd_ctx->events ? EPOLL_CTL_MOD : EPOLL_CTL_ADD;
@@ -124,9 +137,11 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb)
 
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
 
-    if (rt)
-    {
-        std::cerr << "addEvent::epoll_ctl failed: " << strerror(errno) << std::endl;
+    if (rt) {
+        DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
+            << op << ", " << fd << ", " << (EPOLL_EVENTS)epevent.events << "):"
+            << rt << " (" << errno << ") (" << strerror(errno) << ") fd_ctx->events="
+            << (EPOLL_EVENTS)fd_ctx->events;
         return -1;
     }
 
@@ -218,9 +233,16 @@ bool IOManager::cancelEvent(int fd,Event event)
     epevent.data.ptr = fd_ctx;
 
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
-    if (rt)
-    {
-        std::cerr << "cancelEvent::epoll_ctl failed: " << strerror(errno) << std::endl;
+    // if (rt)
+    // {
+    //     std::cerr << "cancelEvent::epoll_ctl failed: " << strerror(errno) << std::endl;
+    // }
+
+    if (rt) {
+        DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
+            << op << ", " << fd << ", " << (EPOLL_EVENTS)epevent.events << "):"
+            << rt << " (" << errno << ") (" << strerror(errno) << ")";
+        return false;
     }
     --m_pendingEvenCount;
     fd_ctx->triggerEvent(event);
@@ -253,9 +275,16 @@ bool IOManager::cancelAll(int fd)
     epevent.data.ptr = fd_ctx;
 
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
+    // if (rt) {
+    //     std::cerr << "IOManager::epoll_ctl failed: " << strerror(errno) << std::endl;
+    //     return -1;
+    // }
+
     if (rt) {
-        std::cerr << "IOManager::epoll_ctl failed: " << strerror(errno) << std::endl;
-        return -1;
+        DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
+            << op << ", " << fd << ", " << (EPOLL_EVENTS)epevent.events << "):"
+            << rt << " (" << errno << ") (" << strerror(errno) << ")";
+        return false;
     }
     
     if (fd_ctx->events & READ) {
@@ -291,6 +320,7 @@ bool IOManager::stopping()
 void IOManager::idle() 
 {
     // 一次epoll_wait最多检测到256个就绪事件，如果就绪事件超过了这个数，那么会在下轮epoll_wait继续处理
+    DAG_LOG_DEBUG(g_logger) << "idle";
     static const uint64_t MAX_EVENTS = 256;
     std::unique_ptr<epoll_event[],void(*)(epoll_event*)> events(new epoll_event[MAX_EVENTS],[](epoll_event* ep) {
         delete[] ep;
@@ -298,11 +328,11 @@ void IOManager::idle()
     
     while (true)
     {
-        if(debug) std::cout << "IOManager::idle(),run in thread: " << getThreadId() << std::endl;
+        // if(debug) std::cout << "IOManager::idle(),run in thread: " << getThreadId() << std::endl;
 
         if(stopping())
         {
-            if(debug) std::cout << "name = " << getName() << " idle exits in thread: " << getThreadId() << std::endl;
+            // if(debug) std::cout << "name = " << getName() << " idle exits in thread: " << getThreadId() << std::endl;
             break;
         }
 
@@ -375,9 +405,15 @@ void IOManager::idle()
                 event.events = EPOLLET | left_events;
 
                 int rt2 = epoll_ctl(m_epfd, op, fd_ctx->fd, &event);
-                if (rt2)
-                {
-                    std::cerr << "idle::epoll_ctl failed: " << strerror(errno) << std::endl;
+                // if (rt2)
+                // {
+                //     std::cerr << "idle::epoll_ctl failed: " << strerror(errno) << std::endl;
+                //     continue;
+                // }
+                if(rt2) {
+                    DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
+                        << op << ", " << fd_ctx->fd << ", " << (EPOLL_EVENTS)event.events << "):"
+                        << rt2 << " (" << errno << ") (" << strerror(errno) << ")";
                     continue;
                 }
 
