@@ -8,6 +8,7 @@
 #include "hook.h"
 #include "ioscheduler.h"
 #include "fd_manager.h"
+#include "logger.h"
 
 // apply XX to all functions
 #define HOOK_FUN(XX) \
@@ -583,6 +584,7 @@ int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optl
 
 int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) noexcept
 {
+    std::cout << "调用了hook setsockopt" << std::endl;
     if(!dag::t_hook_enable) 
     {
         return setsockopt_f(sockfd, level, optname, optval, optlen);
