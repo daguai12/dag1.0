@@ -20,6 +20,53 @@ IF(BUILD_TESTING)
 
 ENDIF()
 
+IF(BUILD_TESTING)
+    SET(CMAKE_BUILD_TYPE Debug)
+
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+    ADD_EXECUTABLE(test_timer test_timer.cpp)
+
+
+    TARGET_INCLUDE_DIRECTORIES(test_timer PRIVATE
+        ${PROJECT_SOURCE_DIR}/fiber_lib
+        ${PROJECT_SOURCE_DIR}/fiber_lib/util
+        ${PROJECT_SOURCE_DIR}/fiber_lib/stream
+    )
+
+    SET_TARGET_PROPERTIES(test_timer PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+    )
+
+    TARGET_LINK_LIBRARIES(test_timer PRIVATE fiber_shared)
+
+ENDIF()
+
+
+IF(BUILD_TESTING)
+    SET(CMAKE_BUILD_TYPE Debug)
+
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
+
+    ADD_EXECUTABLE(test_hook test_hook.cpp)
+
+
+    TARGET_INCLUDE_DIRECTORIES(test_hook PRIVATE
+        ${PROJECT_SOURCE_DIR}/fiber_lib
+        ${PROJECT_SOURCE_DIR}/fiber_lib/util
+        ${PROJECT_SOURCE_DIR}/fiber_lib/stream
+    )
+
+    SET_TARGET_PROPERTIES(test_hook PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin
+    )
+
+    TARGET_LINK_LIBRARIES(test_hook PRIVATE fiber_shared)
+
+ENDIF()
+
+
+
 
 IF(BUILD_TESTING)
     SET(CMAKE_BUILD_TYPE Debug)
