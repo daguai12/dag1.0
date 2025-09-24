@@ -1,4 +1,4 @@
- #include "logger.h"
+#include "logger.h"
 #include "fiber.h"
 #include <atomic>
 #include <iostream>
@@ -76,7 +76,6 @@ Fiber::Fiber() {
     m_state = RUNNING;
 
     if (getcontext(&m_ctx)) {
-        // SYLAR_ASSERT2(false, "getcontext");
         std::cerr << "getcontext error" << std::endl;
     }
 

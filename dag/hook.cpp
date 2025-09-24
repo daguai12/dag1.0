@@ -30,7 +30,6 @@
     XX(sendmsg) \
     XX(close) \
     XX(fcntl) \
-    XX(ioctl) \
     XX(getsockopt) \
     XX(setsockopt) 
 
@@ -440,7 +439,7 @@ int close(int fd)
 	{
 		auto iom = dag::IOManager::GetThis();
 		if(iom)
-		{	
+		{
 			iom->cancelAll(fd);
 		}
 		// del fdctx
@@ -557,25 +556,25 @@ int fcntl(int fd, int cmd, ... /* arg */ )
     }	
 }
 
-int ioctl(int fd, unsigned long request, ...) noexcept
-{
-    va_list va;
-    va_start(va, request);
-    void* arg = va_arg(va, void*);
-    va_end(va);
-
-    if(FIONBIO == request) 
-    {
-        bool user_nonblock = !!*(int*)arg;
-        std::shared_ptr<dag::FdCtx> ctx = dag::FdMgr::GetInstance()->get(fd);
-        if(!ctx || ctx->isClosed() || !ctx->isSocket()) 
-        {
-            return ioctl_f(fd, request, arg);
-        }
-        ctx->setUserNonblock(user_nonblock);
-    }
-    return ioctl_f(fd, request, arg);
-}
+// int ioctl(int fd, unsigned long request, ...) noexcept
+// {
+//     va_list va;
+//     va_start(va, request);
+//     void* arg = va_arg(va, void*);
+//     va_end(va);
+//
+//     if(FIONBIO == request) 
+//     {
+//         bool user_nonblock = !!*(int*)arg;
+//         std::shared_ptr<dag::FdCtx> ctx = dag::FdMgr::GetInstance()->get(fd);
+//         if(!ctx || ctx->isClosed() || !ctx->isSocket()) 
+//         {
+//             return ioctl_f(fd, request, arg);
+//         }
+//         ctx->setUserNonblock(user_nonblock);
+//     }
+//     return ioctl_f(fd, request, arg);
+// }
 
 int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) noexcept
 {

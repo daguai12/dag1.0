@@ -208,17 +208,63 @@ public:
      */
     IPv4Address(uint32_t address = INADDR_ANY, uint16_t port = 0);
 
+    /**
+     * @brief 返回sockaddr指针,只读
+     */
     const sockaddr* getAddr() const override;
+
+     /**
+     * @brief 返回sockaddr指针,读写
+     */
     sockaddr* getAddr() override;
+
+     /**
+     * @brief 返回sockaddr的长度
+     */
     socklen_t getAddrLen() const override;
+
+     /**
+     * @brief 可读性输出地址
+     * @param[in, out] os 输出流
+     */
     std::ostream& insert(std::ostream& os) const override;
 
+    /**
+     * @brief 获取该地址的广播地址
+     * @param[in] prefix_len 子网掩码位数
+     * @return 调用成功返回IPAddress,失败返回nullptr
+     */
     IPAddress::ptr broadcastAddress(uint32_t prefix_len) override;
+
+    /**
+     * @brief 获取该地址的网段
+     * @param[in] prefix_len 子网掩码位数
+     * @return 调用成功返回IPAddress,失败返回nullptr
+     */
     IPAddress::ptr networdAddress(uint32_t prefix_len) override;
+
+    /**
+     * @brief 获取子网掩码地址
+     * @param[in] prefix_len 子网掩码位数
+     * @return 调用成功返回IPAddress,失败返回nullptr
+     */
     IPAddress::ptr subnetMask(uint32_t prefix_len) override;
+
+     /**
+     * @brief 返回端口号
+     */
     uint32_t getPort() const override;
+    
+    /**
+     * @brief 设置端口号
+     * @param[in] v 端口号
+     */
     void setPort(uint16_t v) override;
+
 private:
+    /**
+     * @brief IPv4的sockaddr_in结构
+     */
     sockaddr_in m_addr;
 };
 

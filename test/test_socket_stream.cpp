@@ -2,7 +2,7 @@
 #include "bytearray.h"
 #include "logger.h"
 #include "ioscheduler.h"
-#include "../fiber_lib/stream/socket_stream.h"
+#include "socket_stream.h"
 #include "socket.h"
 #include "tcp_server.h"
 #include <cstring>
