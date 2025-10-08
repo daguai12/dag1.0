@@ -82,7 +82,9 @@ void Scheduler::start()
 
 void Scheduler::run()
 {
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << m_name << " run";
+    #endif
 	int thread_id = getThreadId();
 	
 	set_hook_enable(true);
@@ -212,7 +214,9 @@ void Scheduler::stop()
 	{
 		i->join();
 	}
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << this << " stopped";
+    #endif
 }
 
 void Scheduler::tickle()
@@ -222,7 +226,9 @@ void Scheduler::tickle()
 
 void Scheduler::idle()
 {
+    #if DEBUG
     DAG_LOG_INFO(g_logger) << "idle";
+    #endif
 	while(!stopping())
 	{
 		Fiber::GetThis()->yield();

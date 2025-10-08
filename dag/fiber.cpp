@@ -81,7 +81,9 @@ Fiber::Fiber() {
 
     ++s_fiber_count;
     m_id = s_fiber_id++;  //协程id从0开始，用完加1
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << "Fiber::Fiber main";
+    #endif
 }
 
 
@@ -113,7 +115,9 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize,bool run_in_scheduler)
 
     m_id = s_fiber_id++;
     ++s_fiber_count;
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
+    #endif
 }
 
 /**
@@ -126,8 +130,10 @@ Fiber::~Fiber()
     {
         free(m_stack);
     }
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << "Fiber::~Fiber id=" << m_id
                             << " total=" << s_fiber_count;
+    #endif
 }
 
 /**

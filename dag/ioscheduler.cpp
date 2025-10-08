@@ -124,9 +124,11 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb)
     // }
     
      if(fd_ctx->events & event) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "addEvent assert fd=" << fd
                     << " event=" << (EPOLL_EVENTS)event
                     << " fd_ctx.event=" << (EPOLL_EVENTS)fd_ctx->events;
+        #endif
         DAG_ASSERT(!(fd_ctx->events & event));
     }
 
@@ -138,10 +140,12 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb)
     int rt = epoll_ctl(m_epfd, op, fd, &epevent);
 
     if (rt) {
+        #if DEBUGJ
         DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
             << op << ", " << fd << ", " << (EPOLL_EVENTS)epevent.events << "):"
             << rt << " (" << errno << ") (" << strerror(errno) << ") fd_ctx->events="
             << (EPOLL_EVENTS)fd_ctx->events;
+        #endif
         return -1;
     }
 
@@ -239,9 +243,11 @@ bool IOManager::cancelEvent(int fd,Event event)
     // }
 
     if (rt) {
+        #if DEBUGJ
         DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
             << op << ", " << fd << ", " << (EPOLL_EVENTS)epevent.events << "):"
             << rt << " (" << errno << ") (" << strerror(errno) << ")";
+        #endif
         return false;
     }
     --m_pendingEvenCount;
@@ -281,9 +287,11 @@ bool IOManager::cancelAll(int fd)
     // }
 
     if (rt) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
             << op << ", " << fd << ", " << (EPOLL_EVENTS)epevent.events << "):"
             << rt << " (" << errno << ") (" << strerror(errno) << ")";
+        #endif
         return false;
     }
     
@@ -320,7 +328,9 @@ bool IOManager::stopping()
 void IOManager::idle() 
 {
     // 一次epoll_wait最多检测到256个就绪事件，如果就绪事件超过了这个数，那么会在下轮epoll_wait继续处理
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << "idle";
+    #endif
     static const uint64_t MAX_EVENTS = 256;
     std::unique_ptr<epoll_event[],void(*)(epoll_event*)> events(new epoll_event[MAX_EVENTS],[](epoll_event* ep) {
         delete[] ep;
@@ -411,9 +421,11 @@ void IOManager::idle()
                 //     continue;
                 // }
                 if(rt2) {
+                    #if DEBUGJ
                     DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
                         << op << ", " << fd_ctx->fd << ", " << (EPOLL_EVENTS)event.events << "):"
                         << rt2 << " (" << errno << ") (" << strerror(errno) << ")";
+                    #endif
                     continue;
                 }
 

@@ -2,11 +2,12 @@
 #include "bytearray.h"
 #include "logger.h"
 #include "ioscheduler.h"
-#include "socket_stream.h"
+#include "stream/socket_stream.h"
 #include "socket.h"
 #include "tcp_server.h"
 #include <cstring>
 #include <memory>
+#include <new>
 
 using namespace dag;
 
@@ -21,7 +22,7 @@ public:
 
 protected:
     void handleClient(Socket::ptr client) override {
-        DAG_LOG_INFO(g_logger) << "New client: " << client->getRemoteAddress()->toString();
+        // DAG_LOG_INFO(g_logger) << "New client: " << client->getRemoteAddress()->toString();
 
         SocketStream::ptr  stream = std::make_shared<SocketStream>(client);
         ByteArray::ptr ba(new ByteArray);
@@ -54,20 +55,19 @@ void run_server() {
     IOManager* worker = IOManager::GetThis();
     EchoServer::ptr server = std::make_shared<EchoServer>(worker, worker, worker);
 
-    Address::ptr addr = Address::LookupAny("0.0.0.0:8033");
+    Address::ptr addr = Address::LookupAny("127.0.0.1:8000");
     if(!server->bind(addr)) {
         DAG_LOG_ERROR(g_logger) << "Bind failed";
         return;
     }
 
     server->start();
-    DAG_LOG_INFO(g_logger) << "EchoServer started at:" << addr->toString();
-
+    // DAG_LOG_INFO(g_logger) << "EchoServer started at:" << addr->toString();
 }
 
 int main()
 {
-    IOManager iom(2);
+    IOManager iom(10);
     iom.schedulerLock(run_server);
     return 0;
 }

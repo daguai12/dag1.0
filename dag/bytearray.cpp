@@ -466,8 +466,10 @@ bool ByteArray::writeToFile(const std::string& name) const {
     std::ofstream ofs;
     ofs.open(name, std::ios::trunc | std::ios::binary);
     if(!ofs) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "writeToFile name=" << name
             << " error , errno=" << errno << " errstr=" << strerror(errno);
+        #endif
         return false;
     }
 
@@ -493,8 +495,10 @@ bool ByteArray::readFromFile(const std::string& name) {
     std::ifstream ifs;
     ifs.open(name, std::ios::binary);
     if(!ifs) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "readFromFile name=" << name
             << " error, errno=" << errno << " errstr=" << strerror(errno);
+        #endif
         return false;
     }
 

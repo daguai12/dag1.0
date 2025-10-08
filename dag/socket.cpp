@@ -85,9 +85,11 @@ void Socket::setRecvTimeout(int64_t v){
 bool Socket::getOption(int level, int option, void* result, socklen_t* len){
     int rt = getsockopt(m_sock,level, option, result, (socklen_t*)len);
     if (rt) {
+        #if DEBUG
         DAG_LOG_DEBUG(g_logger) << "getOption sock=" << m_sock
             << "level-" << level << "option=" << option
             << "errno = " << errno << " errstr=" << strerror(errno);
+        #endif
         return false;
     }
     return true;
@@ -98,9 +100,11 @@ bool Socket::getOption(int level, int option, void* result, socklen_t* len){
 bool Socket::setOption(int level, int option, const void* result, size_t len){
     int rt = setsockopt(m_sock, level, option, result, (socklen_t)len);
     if(rt == -1){
+        #if DEBUG
         DAG_LOG_DEBUG(g_logger) << "getOption sock=" << m_sock
             << "level-" << level << "option=" << option
             << "errno = " << errno << " errstr=" << strerror(errno);
+        #endif
         return false;
     }
     return true;
@@ -111,8 +115,10 @@ Socket::ptr Socket::accept() {
     Socket::ptr sock(new Socket(m_family,m_type,m_protocol));
     int newsock = ::accept(m_sock, nullptr, nullptr);
     if(newsock == -1) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "accept(" << m_sock << ") errno="
             << errno << " errstr=" << strerror(errno);
+        #endif
         return nullptr;
     }
     if(sock->init(newsock)) {
@@ -143,15 +149,19 @@ bool Socket::bind(const Address::ptr addr) {
     }
 
     if(addr->getFamily() != m_family) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "bind sock.family("
                 << m_family << ") addr.family(" << addr->getFamily()
                 << ") not equal, addr=" << addr->toString();
+        #endif
         return false;
     }
 
     if(::bind(m_sock, addr->getAddr(), addr->getAddrLen())) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "bind erro errorno=" << errno
             << " errstr=" << strerror(errno);
+        #endif
         return false;
     }
     getLocalAddress();
@@ -167,29 +177,37 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms){
     }
 
     if(addr->getFamily() != m_family) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "connect sock.family("
                 << m_family << ") addr.family(" << addr->getFamily()
                 << ") not equal, addr=" << addr->toString();
+        #endif
         return false;
     }
 
     if(timeout_ms == (uint64_t)(-1)) {
         if(::connect(m_sock, addr->getAddr(), addr->getAddrLen())) {
+            #if DEBUG
             DAG_LOG_ERROR(g_logger) << "sock=" << m_sock << " connect(" << addr->toString()
                 << ") error errorno=" << errno << " errstr=" << strerror(errno);
+            #endif
             close();
             return false;
         }
     } else {
         if(::connect_with_timeout(m_sock,addr->getAddr(), addr->getAddrLen(), timeout_ms)) {
+            #if DEBUG
             DAG_LOG_ERROR(g_logger) << "sock=" << m_sock << " connect(" << addr->toString()
                 << ") timeout=" << timeout_ms  << "error errno="
                 << errno << " errstr=" << strerror(errno);
+            #endif
             close();
             return false;
         }
     }
+    #if DEBUG
     DAG_LOG_DEBUG(g_logger) << "connect is successful";
+    #endif
     m_isConnected = true;
     getRemoteAddress();
     getLocalAddress();
@@ -198,12 +216,16 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms){
 
 bool Socket::listen(int backlog){
     if(!isValid()) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "listen error sock=-1";
+        #endif
         return false;
     }
     if(::listen(m_sock, backlog)) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "listen error errno=" << errno
             << " errstr=" << strerror(errno);
+        #endif
         return false;
     }
     return true;
@@ -316,8 +338,10 @@ Address::ptr Socket::getRemoteAddress() {
     }
     socklen_t addrlen = result->getAddrLen();
     if(getpeername(m_sock, result->getAddr(), &addrlen)) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "getpeername error sock=" << m_sock
             << " errno=" << errno << " errstr=" << strerror(errno);
+        #endif
         return Address::ptr(new UnknownAddress(m_family));
     }
     //doCodeing AF_UNIX
@@ -341,8 +365,10 @@ Address::ptr Socket::getLocalAddress() {
     }
     socklen_t addrlen = result->getAddrLen();
     if(getsockname(m_sock, result->getAddr(), &addrlen)) {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "getsockname error sock=" << m_sock
             << " errno=" << errno << " errstr=" << strerror(errno);
+        #endif
         return Address::ptr(new UnknownAddress(m_family));
     }
     //doCodeing AF_UNIX
@@ -414,9 +440,11 @@ void Socket::newSock(){
     if(m_sock != -1) {
         initSock();
     } else {
+        #if DEBUG
         DAG_LOG_ERROR(g_logger) << "socket (" << m_family
             << ", " << m_type << ", " << m_protocol << ") errno="
             << errno << " errstr-" << strerror(errno);
+        #endif
     }
 }
 

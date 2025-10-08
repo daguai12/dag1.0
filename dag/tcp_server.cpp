@@ -46,16 +46,20 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs
         Socket::ptr sock = Socket::CreateTCPSocket();
         // 尝试绑定地址
         if(!sock->bind(addr)) {
+            #if DEBUG
             DAG_LOG_ERROR(g_logger) << "bind fail errno="
                 << errno << " errstr=" << strerror(errno)
                 << " addr=[" << addr->toString() << "]";
+            #endif
             fails.push_back(addr);
             continue;
         }
         if(!sock->listen()) {
+            #if DEBUG
             DAG_LOG_ERROR(g_logger) << "listen fail errno="
                 << errno << " errstr=" << strerror(errno)
                 << " addr=[" << addr->toString() << "]";
+            #endif
             fails.push_back(addr);
             continue;
         }
@@ -69,9 +73,11 @@ bool TcpServer::bind(const std::vector<Address::ptr>& addrs
     }
 
     for(auto& i : m_socks) {
+        #if DEBUG
         DAG_LOG_INFO(g_logger) << "type=" << m_type
             << " name=" << m_name
             << " server bidn success: " << *i;
+        #endif
     }
     return true;
 }
@@ -84,8 +90,10 @@ void TcpServer::startAccept(Socket::ptr sock) {
             m_ioWorker->schedulerLock(std::bind(&TcpServer::handleClient,
                         shared_from_this(),client));
         } else {
+            #if DEBUG
             DAG_LOG_ERROR(g_logger) << "accept errno=" << errno
                 << " errstr=" << strerror(errno);
+            #endif
         }
     }
 }
@@ -115,7 +123,9 @@ void TcpServer::stop() {
 }
 
 void TcpServer::handleClient(Socket::ptr client) {
+    #if DEBUG
     DAG_LOG_INFO(g_logger) << "handleClient: " << *client;
+    #endif
 }
 
 

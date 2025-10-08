@@ -69,7 +69,9 @@ message(STATUS "Enable build shared libs: ${ENABLE_BUILD_SHARED_LIBS}")
 message(STATUS "Enable compile options -O3: ${ENABLE_COMPILE_OPTIMIZE}")
 
 add_subdirectory(test)
+# add_subdirectory(third_party)
 add_subdirectory(dag)
+add_subdirectory(benchmark)
 
 add_library(${PROJECT_NAME} ${DAG_SOURCE_FILES})
 

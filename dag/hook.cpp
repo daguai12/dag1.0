@@ -556,25 +556,6 @@ int fcntl(int fd, int cmd, ... /* arg */ )
     }	
 }
 
-// int ioctl(int fd, unsigned long request, ...) noexcept
-// {
-//     va_list va;
-//     va_start(va, request);
-//     void* arg = va_arg(va, void*);
-//     va_end(va);
-//
-//     if(FIONBIO == request) 
-//     {
-//         bool user_nonblock = !!*(int*)arg;
-//         std::shared_ptr<dag::FdCtx> ctx = dag::FdMgr::GetInstance()->get(fd);
-//         if(!ctx || ctx->isClosed() || !ctx->isSocket()) 
-//         {
-//             return ioctl_f(fd, request, arg);
-//         }
-//         ctx->setUserNonblock(user_nonblock);
-//     }
-//     return ioctl_f(fd, request, arg);
-// }
 
 int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) noexcept
 {
@@ -583,7 +564,6 @@ int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optl
 
 int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) noexcept
 {
-    std::cout << "调用了hook setsockopt" << std::endl;
     if(!dag::t_hook_enable) 
     {
         return setsockopt_f(sockfd, level, optname, optval, optlen);
