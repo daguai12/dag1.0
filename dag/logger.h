@@ -9,9 +9,11 @@
 #include <vector>
 #include <unordered_map>
 
-#include "./utils/mutex.h"
-#include "./utils/singleton.h"
-#include "./utils/util.h"
+#include "utils/mutex.h"
+#include "utils/singleton.h"
+#include "utils/util.h"
+
+
 
 // region # 宏定义获取日志器
 #define DAG_LOG_ROOT() dag::LoggerMgr::GetInstance()->getRootLogger()
@@ -65,7 +67,11 @@
 
 namespace dag {
 
-    /**
+#ifdef DEBUG
+        #undef DEBUG
+#endif
+
+        /**
      * @brief 日志等级
      */
     class LogLevel {

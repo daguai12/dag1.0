@@ -121,9 +121,6 @@ public:
     // 将当前位置指针移动到位置 v
     void setPosition(size_t v);
 
-    // 
-    void getPosition(size_t v);
-
     // 将node中的数据写入到File中
     bool writeToFile(const std::string& name) const;
 
@@ -134,8 +131,6 @@ public:
 
     size_t getReadSize() const { return m_size - m_position;}
 
-
-    
     bool isLittleEndian() const;
     void setIsLittleEndian(bool val);
 

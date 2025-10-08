@@ -166,7 +166,7 @@ bool Socket::connect(const Address::ptr addr, uint64_t timeout_ms){
         }
     }
 
-     if(addr->getFamily() != m_family) {
+    if(addr->getFamily() != m_family) {
         DAG_LOG_ERROR(g_logger) << "connect sock.family("
                 << m_family << ") addr.family(" << addr->getFamily()
                 << ") not equal, addr=" << addr->toString();

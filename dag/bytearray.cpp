@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <math.h>
 
-#include "endian.h"
+#include "utils/endian.h"
 #include "logger.h"
 
 namespace dag {
@@ -68,6 +68,7 @@ void ByteArray::writeFint8  (int8_t value) {
 void ByteArray::writeFuint8 (uint8_t value) {
     write(&value, sizeof(value));
 }
+
 void ByteArray::writeFint16 (int16_t value) {
     if(m_endian != DAG_BYTE_ORDER) {
         value = byteswap(value);
@@ -411,10 +412,17 @@ void ByteArray::read(void* buf, size_t size, size_t position) const {
         throw std::out_of_range("not enough len");
     }
 
+    size_t node_idx = position / m_baseSize;
+    Node* cur = m_root;
+    while(node_idx > 0) {
+        cur = cur->next;
+        --node_idx;
+    }
+
     size_t npos = position % m_baseSize;
     size_t ncap = m_cur->size - npos;
     size_t bpos = 0;
-    Node* cur = m_cur;
+    // Node* cur = m_cur;
     while(size > 0) {
         if(ncap >= size) {
             memcpy((char*)buf + bpos, cur->ptr + npos, size);
@@ -469,7 +477,9 @@ bool ByteArray::writeToFile(const std::string& name) const {
 
     while(read_size > 0) {
         int diff = pos % m_baseSize;
-        int64_t len = (read_size > (int64_t)m_baseSize ? m_baseSize : read_size) - diff;
+        // int64_t len = (read_size > (int64_t)m_baseSize ? m_baseSize : read_size) - diff;
+        int64_t node_remains = m_baseSize - diff;
+        int64_t len = std::min(node_remains, read_size);
         ofs.write(cur->ptr + diff, len);
         cur = cur->next;
         pos += len;

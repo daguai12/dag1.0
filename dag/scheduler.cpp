@@ -5,7 +5,7 @@
 #include "scheduler.h"
 #include "logger.h"
 #include "hook.h"
-#include "./utils/util.h"
+#include "utils/util.h"
 
 namespace dag{
 

@@ -1,11 +1,11 @@
-#include "address.h"
-#include "logger.h"
 #include <sstream>
 #include <netdb.h>
 #include <ifaddrs.h>
 #include <stddef.h>
 
-#include "endian.h"
+#include "utils/endian.h"
+#include "address.h"
+#include "logger.h"
 
 namespace dag {
 
@@ -45,7 +45,6 @@ IPAddress::ptr Address::LookupAnyIPAddress(const std::string& host,
         for(auto& i : result) {
             IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);
             if(v) {
-                printf("nihao\n");
                 return v;
             }
         }
@@ -73,7 +72,7 @@ bool Address::Lookup(std::vector<Address::ptr>& result, const std::string& host,
     if(!host.empty() && host[0] == '[') {
         const char* endipv6 = (const char*)memchr(host.c_str() + 1, ']', host.size() - 1);
         if(endipv6) {
-            //TODO check out of range
+            //TODO: check out of range
             if(*(endipv6 + 1) == ':') {
                 service = endipv6 + 2;
             }
@@ -137,16 +136,6 @@ bool Address::GetInterfaceAddresses(std::multimap<std::string
                         addr = Create(next->ifa_addr, sizeof(sockaddr_in));
                         uint32_t netmask = ((sockaddr_in*)next->ifa_netmask)->sin_addr.s_addr;
                         prefix_len = CountBytes(netmask);
-                    }
-                    break;
-                case AF_INET6:
-                    {
-                        addr = Create(next->ifa_addr, sizeof(sockaddr_in6));
-                        in6_addr& netmask = ((sockaddr_in6*)next->ifa_netmask)->sin6_addr;
-                        prefix_len = 0;
-                        for(int i = 0; i < 16; ++i) {
-                            prefix_len += CountBytes(netmask.s6_addr[i]);
-                        }
                     }
                     break;
                 default:
