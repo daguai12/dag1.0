@@ -4,7 +4,7 @@
 #include <memory>
 #include <shared_mutex>
 #include <vector>
-#include "./utils/singleton.h"
+#include "utils/singleton.h"
 
 namespace dag{
 

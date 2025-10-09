@@ -55,18 +55,16 @@ void hook_init()
 	{
 		return;
 	}
-
-	// test
+    #if DEBUG
 	is_inited = true;
-
-
-// assignment -> sleep_f = (sleep_fun)dlsym(RTLD_NEXT, "sleep"); -> dlsym -> fetch the original symbols/function
-#define XX(name) name ## _f = (name ## _fun)dlsym(RTLD_NEXT, #name);
-	HOOK_FUN(XX)
-#undef XX
+    #endif
+    // assignment -> sleep_f = (sleep_fun)dlsym(RTLD_NEXT, "sleep"); 保存c标准库中函数的地址
+    #define XX(name) name ## _f = (name ## _fun)dlsym(RTLD_NEXT, #name);
+        HOOK_FUN(XX)
+    #undef XX
 }
 
-// static variable initialisation will run before the main function
+// 静态变量在main函数执行前初始化完成
 struct HookIniter
 {
 	HookIniter()
@@ -84,7 +82,6 @@ struct timer_info
     int cancelled = 0;
 };
 
-// universal template for read and write function
 template<typename OriginFun, typename... Args>
 static ssize_t do_io(int fd, OriginFun fun, const char* hook_fun_name, uint32_t event, int timeout_so, Args&&... args) 
 {
@@ -110,33 +107,32 @@ static ssize_t do_io(int fd, OriginFun fun, const char* hook_fun_name, uint32_t 
         return fun(fd, std::forward<Args>(args)...);
     }
 
-    // get the timeout
+    // 获取超时时间
     uint64_t timeout = ctx->getTimeout(timeout_so);
-    // timer condition
+    // 设置条件
     std::shared_ptr<timer_info> tinfo(new timer_info);
 
 retry:
-	// run the function
     ssize_t n = fun(fd, std::forward<Args>(args)...);
     
-    // EINTR ->Operation interrupted by system ->retry
-    while(n == -1 && errno == EINTR) 
+    // 被信号中断重新启动系统调用
+    while(n == -1 && errno == EINTR)
     {
         n = fun(fd, std::forward<Args>(args)...);
     }
     
-    // 0 resource was temporarily unavailable -> retry until ready 
-    if(n == -1 && (errno == EAGAIN || errno || EWOULDBLOCK))
+    // 没有数据可以读取
+    if(n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
     {
         dag::IOManager* iom = dag::IOManager::GetThis();
-        // timer
+        // 定时器指针
         std::shared_ptr<dag::Timer> timer;
         std::weak_ptr<timer_info> winfo(tinfo);
 
-        // 1 timeout has been set -> add a conditional timer for canceling this operation
+        // 1. 如果设置了超时时间 -> 添加条件定时器，用于在超时后取消该操作
         if(timeout != (uint64_t)-1) 
         {
-            timer = iom->addConditionTimer(timeout, [winfo, fd, iom, event]() 
+            timer = iom->addConditionTimer(timeout, [winfo, fd, iom, event]()
             {
                 auto t = winfo.lock();
                 if(!t || t->cancelled) 
@@ -144,12 +140,12 @@ retry:
                     return;
                 }
                 t->cancelled = ETIMEDOUT;
-                // cancel this event and trigger once to return to this fiber
+                // 取消该事件，并触发一次以唤醒等待的协程
                 iom->cancelEvent(fd, (dag::IOManager::Event)(event));
             }, winfo);
         }
 
-        // 2 add event -> callback is this fiber
+        // 2 向IOManager注册事件 -> 回调函数为当前协程
         int rt = iom->addEvent(fd, (dag::IOManager::Event)(event));
         if(rt)
         {
@@ -162,14 +158,15 @@ retry:
         } 
         else 
         {
+            // 当前协程让出执行权，等待事件或定时器唤醒
             dag::Fiber::GetThis()->yield();
      
-            // 3 resume either by addEvent or cancelEvent
+            // 3 被addEvent或cancelEvent唤醒后执行
             if(timer) 
             {
                 timer->cancel();
             }
-            // by cancelEvent
+            // 如果是因为定时器超时导致的取消事件
             if(tinfo->cancelled == ETIMEDOUT) 
             {
                 errno = tinfo->cancelled;
@@ -186,12 +183,11 @@ retry:
 extern "C"{
 #endif
 
-// declaration -> sleep_fun sleep_f = nullptr;
+// 声明函数指针 -> sleep_fun sleep_f = nullptr;
 #define XX(name) name ## _fun name ## _f = nullptr;
 	HOOK_FUN(XX)
 #undef XX
 
-// only use at task fiber
 unsigned int sleep(unsigned int seconds)
 {
 	if(!dag::t_hook_enable)
@@ -217,9 +213,7 @@ int usleep(useconds_t usec)
 
 	std::shared_ptr<dag::Fiber> fiber = dag::Fiber::GetThis();
 	dag::IOManager* iom = dag::IOManager::GetThis();
-	// add a timer to reschedule this fiber
 	iom->addTimer(usec/1000, [fiber, iom](){iom->schedulerLock(fiber);});
-	// wait for the next resume
 	fiber->yield();
 	return 0;
 }
@@ -235,9 +229,7 @@ int nanosleep(const struct timespec* req, struct timespec* rem)
 
 	std::shared_ptr<dag::Fiber> fiber = dag::Fiber::GetThis();
 	dag::IOManager* iom = dag::IOManager::GetThis();
-	// add a timer to reschedule this fiber
 	iom->addTimer(timeout_ms, [fiber, iom](){iom->schedulerLock(fiber, -1);});
-	// wait for the next resume
 	fiber->yield();	
 	return 0;
 }
@@ -284,7 +276,6 @@ int connect_with_timeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
         return connect_f(fd, addr, addrlen);
     }
 
-    // attempt to connect
     int n = connect_f(fd, addr, addrlen);
     if(n == 0) 
     {
@@ -295,7 +286,6 @@ int connect_with_timeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
         return n;
     }
 
-    // wait for write event is ready -> connect succeeds
     dag::IOManager* iom = dag::IOManager::GetThis();
     std::shared_ptr<dag::Timer> timer;
     std::shared_ptr<timer_info> tinfo(new timer_info);
@@ -320,7 +310,6 @@ int connect_with_timeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
     {
         dag::Fiber::GetThis()->yield();
 
-        // resume either by addEvent or cancelEvent
         if(timer) 
         {
             timer->cancel();
@@ -341,7 +330,6 @@ int connect_with_timeout(int fd, const struct sockaddr* addr, socklen_t addrlen,
         std::cerr << "connect addEvent(" << fd << ", WRITE) error";
     }
 
-    // check out if the connection socket established 
     int error = 0;
     socklen_t len = sizeof(int);
     if(-1 == getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len)) 
@@ -442,7 +430,6 @@ int close(int fd)
 		{
 			iom->cancelAll(fd);
 		}
-		// del fdctx
 		dag::FdMgr::GetInstance()->del(fd);
 	}
 	return close_f(fd);
@@ -450,7 +437,7 @@ int close(int fd)
 
 int fcntl(int fd, int cmd, ... /* arg */ )
 {
-  	va_list va; // to access a list of mutable parameters
+    va_list va; 
 
     va_start(va, cmd);
     switch(cmd) 

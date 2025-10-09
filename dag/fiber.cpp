@@ -23,9 +23,9 @@ static std::atomic<uint64_t> s_fiber_count{0};
 
 /**
  * @brief 返回当前线程正在执行的协程
- * @details 如果当前线程还未创建协程，则创建线程的低一个协程,
- * 且该协程为当前线程的主协程，其他协程都通过这个协程来调度，也就是说，其他协程
- * 结束时，都要切换回主协程，由主协程重新选择新的协程进行resume
+ * @details 如果当前线程还没有任何协程，则为该线程创建第一个协程。
+ * 该协程为主协程。它不分配任何新栈，而是直接使用线程本身的栈。主协程的作用是使其他协程
+ * 能够yield回来的基础.
  * @attention 线程如果要创建协程，那么应该首先执行一下Fiber::GetThis()操作，以初始化主函数协程
  */
 std::shared_ptr<Fiber> Fiber::GetThis()
@@ -35,11 +35,18 @@ std::shared_ptr<Fiber> Fiber::GetThis()
         return t_fiber->shared_from_this();
     }
 
+    #if 0
     std::shared_ptr<Fiber> main_fiber(new Fiber());
     t_thread_fiber = main_fiber;
     t_scheduler_fiber = main_fiber.get(); 
 
     assert(t_fiber == main_fiber.get());
+    return t_fiber->shared_from_this();
+    #endif
+    
+    std::shared_ptr<Fiber> main_fiber(new Fiber());
+    t_fiber = main_fiber.get();
+    t_thread_fiber = main_fiber;
     return t_fiber->shared_from_this();
 }
 
