@@ -266,7 +266,7 @@ uint32_t ByteArray::readUint32() {
     return result;
 }
 
-int64_t  ByteArray::readInt64() {
+int64_t ByteArray::readInt64() {
     return DecodeZigzag64(readUint64());
 }
 
@@ -284,14 +284,14 @@ uint64_t ByteArray::readUint64() {
     return result;
 }
 
-float    ByteArray::readFloat() {
+float ByteArray::readFloat() {
     uint32_t v = readFuint32();
     float value;
     memcpy(&value, &v, sizeof(v));
     return value;
 }
 
-double   ByteArray::readDouble() {
+double ByteArray::readDouble() {
     uint64_t v = readFuint64();
     double value;
     memcpy(&value, &v, sizeof(v));
@@ -640,10 +640,7 @@ uint64_t ByteArray::getWriteBuffers(std::vector<iovec>& buffers, uint64_t len) {
         return 0;
     }
     addCapacity(len);
-    uint64_t size = len;
-
-    size_t npos = m_position % m_baseSize;
-    size_t ncap = m_cur->size - npos;
+    uint64_t size = len; size_t npos = m_position % m_baseSize; size_t ncap = m_cur->size - npos;
     struct iovec iov;
     Node* cur = m_cur;
     while(len > 0) {

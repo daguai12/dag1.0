@@ -1,3 +1,71 @@
+#if 0
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <arpa/inet.h>
+#include <sys/epoll.h>
+
+#define MAX_EVENTS 10
+#define PORT 8000
+
+int make_nonblock(int fd) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+}
+
+int main() {
+    int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    struct sockaddr_in addr = {0};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(PORT);
+    addr.sin_addr.s_addr = INADDR_ANY;
+
+    bind(listen_fd, (struct sockaddr*)&addr, sizeof(addr));
+    listen(listen_fd, 128);
+    make_nonblock(listen_fd);
+
+    int epfd = epoll_create1(0);
+    struct epoll_event ev, events[MAX_EVENTS];
+    ev.events = EPOLLIN;
+    ev.data.fd = listen_fd;
+    epoll_ctl(epfd, EPOLL_CTL_ADD, listen_fd, &ev);
+
+    while (1) {
+        int n = epoll_wait(epfd, events, MAX_EVENTS, -1);
+        for (int i = 0; i < n; i++) {
+            int fd = events[i].data.fd;
+            if (fd == listen_fd) {
+                int conn_fd = accept(listen_fd, NULL, NULL);
+                make_nonblock(conn_fd);
+                ev.events = EPOLLIN | EPOLLET;  // 边缘触发
+                ev.data.fd = conn_fd;
+                epoll_ctl(epfd, EPOLL_CTL_ADD, conn_fd, &ev);
+            } else {
+                char buf[4096];
+                while (1) {
+                    int len = read(fd, buf, sizeof(buf));
+                    if (len == 0) {
+                        close(fd);
+                        break;
+                    } else if (len < 0) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+                        perror("read");
+                        close(fd);
+                        break;
+                    } else {
+                        write(fd, buf, len);
+                    }
+                }
+            }
+        }
+    }
+    return 0;
+}
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,11 +77,11 @@
 #include <sys/epoll.h>
 #include <errno.h>
 
-#define MAX_EVENTS 10   // epoll_wait 返回的最大事件数
-#define BUFFER_SIZE 512 // 缓冲区大小
-#define PORT 8888       // 监听端口
+#define MAX_EVENTS 64
+#define BUFFER_SIZE 10240
+#define PORT 8888 // Use a different port to avoid conflict
 
-// 函数：设置文件描述符为非阻塞模式
+// Sets a file descriptor to non-blocking mode
 void set_non_blocking(int sockfd) {
     int flags = fcntl(sockfd, F_GETFL, 0);
     if (flags == -1) {
@@ -28,135 +96,70 @@ void set_non_blocking(int sockfd) {
 
 int main() {
     int listen_sock, conn_sock;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t client_len = sizeof(client_addr);
+    struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE];
 
-    // 1. 创建监听 socket
-    if ((listen_sock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        perror("socket");
-        exit(EXIT_FAILURE);
-    }
-
-    // 设置 SO_REUSEADDR 选项，允许端口快速重用
+    // 1. Create, bind, and listen
+    listen_sock = socket(AF_INET, SOCK_STREAM, 0);
     int opt = 1;
-    if (setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
-        perror("setsockopt");
-        close(listen_sock);
-        exit(EXIT_FAILURE);
-    }
+    setsockopt(listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 
-    // 2. 绑定地址和端口
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = htonl(INADDR_ANY); // 监听所有网络接口
+    server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     server_addr.sin_port = htons(PORT);
 
     if (bind(listen_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("bind");
-        close(listen_sock);
         exit(EXIT_FAILURE);
     }
 
-    // 3. 开始监听
-    if (listen(listen_sock, 5) == -1) {
+    if (listen(listen_sock, SOMAXCONN) == -1) {
         perror("listen");
-        close(listen_sock);
         exit(EXIT_FAILURE);
     }
-
-    // 将监听 socket 设置为非阻塞
     set_non_blocking(listen_sock);
 
-    // 4. 创建 epoll 实例
+    // 2. Create epoll instance and register the listening socket
     int epoll_fd = epoll_create1(0);
-    if (epoll_fd == -1) {
-        perror("epoll_create1");
-        close(listen_sock);
-        exit(EXIT_FAILURE);
-    }
-
     struct epoll_event event, events[MAX_EVENTS];
-
-    // 5. 将监听 socket 添加到 epoll 中
-    event.events = EPOLLIN; // 监听读事件（新连接）
+    event.events = EPOLLIN;
     event.data.fd = listen_sock;
-    if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_sock, &event) == -1) {
-        perror("epoll_ctl: listen_sock");
-        close(listen_sock);
-        close(epoll_fd);
-        exit(EXIT_FAILURE);
-    }
+    epoll_ctl(epoll_fd, EPOLL_CTL_ADD, listen_sock, &event);
 
-    printf("Echo server is listening on port %d\n", PORT);
+    printf("Raw epoll server listening on port %d\n", PORT);
 
-    // 6. 事件循环
+    // 3. The Event Loop
     while (1) {
-        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1); // -1 表示无限等待
-        if (num_events == -1) {
-            perror("epoll_wait");
-            break;
-        }
+        int num_events = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 
         for (int i = 0; i < num_events; i++) {
             if (events[i].data.fd == listen_sock) {
-                // a. 处理新的客户端连接
-                conn_sock = accept(listen_sock, (struct sockaddr *)&client_addr, &client_len);
-                if (conn_sock == -1) {
-                    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-                        // 由于是 listen_sock 是非阻塞的，可能没有连接可接受
-                        printf("accept returned EAGAIN or EWOULDBLOCK\n");
-                    } else {
-                        perror("accept");
-                    }
-                    continue;
-                }
-
-                // 将新的客户端 socket 设置为非阻塞
+                // Handle new connection
+                conn_sock = accept(listen_sock, NULL, NULL);
                 set_non_blocking(conn_sock);
-
-                // 将新的客户端 socket 添加到 epoll
-                event.events = EPOLLIN | EPOLLET; // 监听读事件，并使用边缘触发(ET)模式
+                event.events = EPOLLIN | EPOLLET; // Edge-Triggered
                 event.data.fd = conn_sock;
-                if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, conn_sock, &event) == -1) {
-                    perror("epoll_ctl: conn_sock");
-                    close(conn_sock);
-                } else {
-                     printf("New connection from %s:%d (fd: %d)\n",
-                           inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port), conn_sock);
-                }
-
+                epoll_ctl(epoll_fd, EPOLL_CTL_ADD, conn_sock, &event);
             } else {
-                // b. 处理已连接客户端的数据
+                // Handle client data
                 int client_fd = events[i].data.fd;
                 ssize_t bytes_read;
-
-                // 由于使用了边缘触发(ET)，必须循环读取，直到缓冲区为空(EAGAIN)
+                // Edge-triggered mode requires reading until EAGAIN
                 while ((bytes_read = read(client_fd, buffer, BUFFER_SIZE)) > 0) {
-                    // echo 数据回客户端
-                    write(client_fd, buffer, bytes_read);
+                    write(client_fd, buffer, bytes_read); // Echo
                 }
 
-                if (bytes_read == 0) {
-                    // 客户端关闭了连接
-                    printf("Client (fd: %d) disconnected.\n", client_fd);
-                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL); // 从 epoll 中移除
+                if (bytes_read == 0 || (bytes_read == -1 && errno != EAGAIN)) {
+                    // Client disconnected or error
+                    epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
                     close(client_fd);
-                } else if (bytes_read == -1) {
-                    if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                        // 发生了一个真正的错误
-                        perror("read error");
-                        epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL);
-                        close(client_fd);
-                    }
                 }
             }
         }
     }
 
-    // 7. 清理资源
     close(listen_sock);
     close(epoll_fd);
-
     return 0;
 }

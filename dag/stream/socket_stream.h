@@ -3,7 +3,6 @@
 
 #include "stream.h"
 #include "socket.h"
-#include "ioscheduler.h"
 
 namespace dag {
 
@@ -87,4 +86,3 @@ protected:
 };
 
 #endif
-

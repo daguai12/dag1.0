@@ -1,7 +1,6 @@
 #include "socket_stream.h"
 #include "bytearray.h"
 #include "socket.h"
-#include "utils/util.h"
 
 namespace dag {
 

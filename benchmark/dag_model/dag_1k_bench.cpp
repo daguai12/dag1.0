@@ -34,7 +34,7 @@ protected:
             ba->clear();
             ba->setPosition(0);
 
-            int rt = stream->read(ba, 1024);
+            int rt = stream->read(ba, 10240);
             if (rt == 0) {
                 #if DEBUG
                 DAG_LOG_INFO(g_logger) << "Client closed: " << stream->getRemoteAddress();
