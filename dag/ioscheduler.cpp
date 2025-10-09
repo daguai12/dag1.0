@@ -421,7 +421,7 @@ void IOManager::idle()
                 //     continue;
                 // }
                 if(rt2) {
-                    #if DEBUGJ
+                    #if DEBUG
                     DAG_LOG_ERROR(g_logger) << "epoll_ctl(" << m_epfd << ", "
                         << op << ", " << fd_ctx->fd << ", " << (EPOLL_EVENTS)event.events << "):"
                         << rt2 << " (" << errno << ") (" << strerror(errno) << ")";
